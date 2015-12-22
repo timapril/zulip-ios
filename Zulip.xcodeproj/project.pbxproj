@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3125BE4B1C0D2D8B009A8037 /* SafariServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3125BE4A1C0D2D8B009A8037 /* SafariServices.framework */; };
 		51BA4F5517F6069300BBF48C /* BrowserViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 51BA4F4D17F6069300BBF48C /* BrowserViewController.m */; };
 		51BA4F5617F6069300BBF48C /* BrowserViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51BA4F4E17F6069300BBF48C /* BrowserViewController.xib */; };
 		51BA4F5717F6069300BBF48C /* left.png in Resources */ = {isa = PBXBuildFile; fileRef = 51BA4F4F17F6069300BBF48C /* left.png */; };
@@ -161,6 +162,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3125BE4A1C0D2D8B009A8037 /* SafariServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SafariServices.framework; path = System/Library/Frameworks/SafariServices.framework; sourceTree = SDKROOT; };
 		51BA4F4C17F6069300BBF48C /* BrowserViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserViewController.h; sourceTree = "<group>"; };
 		51BA4F4D17F6069300BBF48C /* BrowserViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserViewController.m; sourceTree = "<group>"; };
 		51BA4F4E17F6069300BBF48C /* BrowserViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BrowserViewController.xib; sourceTree = "<group>"; };
@@ -371,6 +373,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3125BE4B1C0D2D8B009A8037 /* SafariServices.framework in Frameworks */,
 				7882F1B817BAA01600A27601 /* CoreText.framework in Frameworks */,
 				7882F1B617BA9FFD00A27601 /* ImageIO.framework in Frameworks */,
 				7882F1B417BA9FF300A27601 /* libxml2.dylib in Frameworks */,
@@ -730,6 +733,7 @@
 		C31673831620DB6B00CE9FE5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3125BE4A1C0D2D8B009A8037 /* SafariServices.framework */,
 				7882F1B717BAA01600A27601 /* CoreText.framework */,
 				7882F1B517BA9FFD00A27601 /* ImageIO.framework */,
 				7882F1B317BA9FF300A27601 /* libxml2.dylib */,
@@ -823,6 +827,7 @@
 				C316737E1620DB6B00CE9FE5 /* Resources */,
 				0D7945DE9F934D1095A116F5 /* Copy Pods Resources */,
 				B398BE0F1A8707A3000890CE /* ShellScript */,
+				D8C6716B3368270337E4DAF2 /* Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1028,6 +1033,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
+		};
+		D8C6716B3368270337E4DAF2 /* Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods/Pods-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 

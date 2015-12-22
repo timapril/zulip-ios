@@ -5,9 +5,10 @@
 @interface ZulipAPIClient : AFHTTPClient
 
 // Set the credentials before using the ZulipAPIClient via [ZulipAPIClient +sharedClient]
-+ (void) setEmailForDomain:(NSString *)userEmail;
++ (void) setEmailForDomain:(NSString *)userEmail domain:(NSString *)domain;
 + (void) setCredentials:(NSString *)userEmail withAPIKey:(NSString *)key;
 
++ (void) updateURL:(NSString *)newDoamin;
 + (ZulipAPIClient *) sharedClient;
 
 - (AFHTTPRequestOperation *)HTTPRequestOperationWithRequest:(NSURLRequest *)urlRequest success:(void ( ^ ) ( AFHTTPRequestOperation *operation , id responseObject ))success failure:(void ( ^ ) ( AFHTTPRequestOperation *operation , NSError *error ))failure;

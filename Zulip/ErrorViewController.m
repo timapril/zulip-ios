@@ -1,4 +1,5 @@
 #import "ErrorViewController.h"
+#import "ZulipAPIController.h"
 
 @interface ErrorViewController ()
 
@@ -26,6 +27,12 @@
 
 - (IBAction)goBack
 {
+    [self.view removeFromSuperview];
+}
+
+- (IBAction)logout
+{
+    [[ZulipAPIController sharedInstance] logout];
     [self.view removeFromSuperview];
 }
 

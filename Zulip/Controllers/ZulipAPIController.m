@@ -65,7 +65,6 @@ NSString * const kLoginNotification = @"ZulipLoginNotification";
 NSString * const kPushNotificationMessagePayloadNotification = @"PushNotificationMessagePayload";
 NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage";
 
-
 @implementation ZulipAPIController
 
 // Explicitly synthesize so we _-prefix member vars,
@@ -89,6 +88,9 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
                                              initWithIdentifier:@"ZulipLogin" accessGroup:nil];
         NSString *storedApiKey = [keychainItem objectForKey:(__bridge id)kSecValueData];
         NSString *storedEmail = [keychainItem objectForKey:(__bridge id)kSecAttrAccount];
+        NSString *storedServer = [keychainItem objectForKey:(__bridge id)kSecAttrLabel];
+
+        [ZulipAPIClient setEmailForDomain:storedEmail domain:storedServer];
 
         [self initPollers];
 
@@ -99,7 +101,6 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
 
             [ZulipAPIClient setCredentials:self.email withAPIKey:self.apiKey];
 
-            [[PreferencesWrapper sharedInstance] setDomain:[self domain]];
             _pointer = [[PreferencesWrapper sharedInstance] pointer];
             _fullName = [[PreferencesWrapper sharedInstance] fullName];
 
@@ -194,17 +195,17 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
     // Load initial activity status, etc
 }
 
-- (void)login:(NSString *)username password:(NSString *)password result:(void (^) (bool success))result;
+- (void)login:(NSString *)serverDomain email:(NSString *)email password:(NSString *)password result:(void (^) (bool success))result;
 {
-    if (!username || !password) {
+    if (!email || !password) {
         result(NO);
         return;
     }
 
-    NSDictionary *postFields =  @{@"username": username,
+    NSDictionary *postFields =  @{@"username": email,
                                   @"password": password};
 
-    [ZulipAPIClient setEmailForDomain:username];
+    [ZulipAPIClient setEmailForDomain:email domain:serverDomain];
 
     [[ZulipAPIClient sharedClient] postPath:@"fetch_api_key" parameters:postFields success:^(AFHTTPRequestOperation *operation , id responseObject) {
         NSDictionary *jsonDict = (NSDictionary *)responseObject;
@@ -215,14 +216,15 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
         }
 
         self.apiKey = jsonDict[@"api_key"];
-        self.email = jsonDict[@"email"] ?: username;
+        self.email = jsonDict[@"email"] ?: email;
+        self.domain = serverDomain;
 
         KeychainItemWrapper *keychainItem = [[KeychainItemWrapper alloc] initWithIdentifier:@"ZulipLogin" accessGroup:nil];
         [keychainItem setObject:self.apiKey forKey:(__bridge id)kSecValueData];
         [keychainItem setObject:self.email forKey:(__bridge id)kSecAttrAccount];
+        [keychainItem setObject:self.domain forKey:(__bridge id)kSecAttrLabel];
 
         [ZulipAPIClient setCredentials:self.email withAPIKey:self.apiKey];
-        [[PreferencesWrapper sharedInstance] setDomain:[self domain]];
 
         [self registerForMessages];
         [self registerForMetadata];
@@ -241,6 +243,39 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
     }];
 }
 
+- (void)loginWithAPI:(void (^) (bool successs)) result;
+{
+    NSLog(@"Starting loging via api");
+    KeychainItemWrapper *keychainItem = [[KeychainItemWrapper alloc] initWithIdentifier:@"ZulipLogin" accessGroup:nil];
+    NSString *apiKey = [keychainItem objectForKey:(__bridge id)kSecValueData];
+    NSString *email = [keychainItem objectForKey:(__bridge id)kSecAttrAccount];
+    NSString *domain = [keychainItem objectForKey:(__bridge id)kSecAttrLabel];
+
+    NSLog(@"APIKey: %@", apiKey);
+    NSLog(@"Email: %@", email);
+    NSLog(@"Domain: %@", domain);
+
+    if (!email || !apiKey) {
+        result(NO);
+        return;
+    }
+
+    [ZulipAPIClient setEmailForDomain:email domain:domain];
+
+    [ZulipAPIClient setCredentials:email withAPIKey:apiKey];
+
+    [self registerForMessages];
+    [self registerForMetadata];
+
+    result(YES);
+
+    NSNotification *loginNotification = [NSNotification notificationWithName:kLoginNotification
+                                                                      object:self
+                                                                    userInfo:nil];
+    [[NSNotificationCenter defaultCenter] postNotification:loginNotification];
+
+}
+
 - (void) logout
 {
     // Hide any error screens if visible
@@ -255,7 +290,14 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
     [self clearSettingsForNewUser:YES];
     KeychainItemWrapper *keychainItem = [[KeychainItemWrapper alloc]
                                          initWithIdentifier:@"ZulipLogin" accessGroup:nil];
+
+    NSString *domain = [keychainItem objectForKey:(__bridge id)kSecAttrLabel];
+    NSString *email = [keychainItem objectForKey:(__bridge id)kSecAttrAccount];
+
     [keychainItem resetKeychainItem];
+
+    [keychainItem setObject:email forKey:(__bridge id)kSecAttrAccount];
+    [keychainItem setObject:domain forKey:(__bridge id)kSecAttrLabel];
 
     [self.appDelegate reloadCoreData];
 
@@ -272,21 +314,6 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
 - (BOOL)loggedIn
 {
     return ![self.apiKey isEqualToString:@""];
-}
-
-- (NSString *)domain
-{
-    NSString *host = [[[ZulipAPIClient sharedClient] baseURL] host];
-    NSString *domainPart;
-    if ([host isEqualToString:@"localhost"]) {
-        domainPart = @"local";
-    } else if ([host isEqualToString:@"staging.zulip.com"]) {
-        domainPart = @"staging";
-    } else {
-        domainPart = [[self.email componentsSeparatedByString:@"@"] lastObject];
-    }
-
-    return [NSString stringWithFormat:@"%@-%@", self.email, domainPart];
 }
 
 - (void)registerForMessages
@@ -730,9 +757,10 @@ NSString * const kPushNotificationMessagePayloadData = @"PushNotificationMessage
     KeychainItemWrapper *keychainItem = [[KeychainItemWrapper alloc] initWithIdentifier:@"ZulipLogin" accessGroup:nil];
     [keychainItem setObject:self.apiKey forKey:(__bridge id)kSecValueData];
     [keychainItem setObject:self.email forKey:(__bridge id)kSecAttrAccount];
+    [keychainItem setObject:self.domain forKey:(__bridge id)kSecAttrLabel];
 
+    [ZulipAPIClient setEmailForDomain:self.email domain:self.domain];
     [ZulipAPIClient setCredentials:self.email withAPIKey:self.apiKey];
-    [[PreferencesWrapper sharedInstance] setDomain:[self domain]];
 
     [self registerForMessages];
     [self registerForMetadata];

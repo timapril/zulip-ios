@@ -78,5 +78,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>zulip</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>org.zulip</string>
+		</dict>
+	</array>
 </dict>
 </plist>

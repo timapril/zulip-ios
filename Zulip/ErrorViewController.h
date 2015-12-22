@@ -5,5 +5,6 @@
 @property (strong, nonatomic) IBOutlet UILabel *errorMessage;
 
 - (IBAction) goBack;
+- (IBAction) logout;
 
 @end

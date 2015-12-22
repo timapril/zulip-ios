@@ -5,35 +5,70 @@
 @implementation ZulipAPIClient
 
 static NSString *email = nil;
+static NSString *domain = nil;
 static BOOL debug = NO;
 
 + (void)setCredentials:(NSString *)userEmail withAPIKey:(NSString *)key {
     email = userEmail;
 
     [[ZulipAPIClient sharedClient] setAuthorizationHeaderWithUsername:email password:key];
-
 }
 
-+ (void)setEmailForDomain:(NSString *)userEmail
++ (void)setEmailForDomain:(NSString *)userEmail domain:(NSString *)userDomain
 {
     email = userEmail;
+    domain = userDomain;
 }
 
 static dispatch_once_t *onceTokenPointer;
+static ZulipAPIClient *_sharedClient = nil;
+
++ (void)updateURL:(NSString *)newDomain
+{
+    // ZulipAPIClient *client = [ZulipAPIClient sharedClient];
+
+    NSString *apiURLString;
+    NSString *protocol;
+
+    if (debug == YES) {
+        protocol = @"http";
+    } else {
+        protocol = @"https";
+    }
+
+    apiURLString = [NSString stringWithFormat:@"%@://%@/api/v1/", protocol, newDomain];
+
+    NSLog(@"Loading URL: %@", apiURLString);
+    NSURL *apiURL = [NSURL URLWithString:apiURLString];
+    _sharedClient = [[ZulipAPIClient alloc] initWithBaseURL:apiURL];
+
+    NSString *version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+    NSString *userAgent = [NSString stringWithFormat:@"ZulipiOS/%@ (%@; %@)", version, [[UIDevice currentDevice] model], [[UIDevice currentDevice] systemVersion]];
+
+    [_sharedClient setDefaultHeader:@"User-Agent" value:userAgent];
+
+    _sharedClient.apiURL = apiURL;
+}
 
 // Singleton
 + (ZulipAPIClient *)sharedClient {
-    static ZulipAPIClient *_sharedClient = nil;
+    if (domain == nil) {
+        NSLog(@"We need a domain set. Skipping network stack initialization until we have one");
+      return nil;
+    }
     static dispatch_once_t onceToken;
     onceTokenPointer = &onceToken;
     dispatch_once(&onceToken, ^{
         NSString *apiURLString;
+        NSString *protocol;
 
         if (debug == YES) {
-            apiURLString = @"http://localhost:9991/api/v1";
+            protocol = @"http";
         } else {
-            apiURLString = @"https://api.zulip.com/v1/";
+            protocol = @"https";
         }
+
+        apiURLString = [NSString stringWithFormat:@"%@://%@/api/v1/", protocol, domain];
 
         NSLog(@"Loading URL: %@", apiURLString);
         NSURL *apiURL = [NSURL URLWithString:apiURLString];

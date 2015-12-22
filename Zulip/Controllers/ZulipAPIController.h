@@ -46,11 +46,11 @@ typedef void(^MessagesDelivered)(NSArray *messages, BOOL isFinished);
 
 + (ZulipAPIController *) sharedInstance;
 
-- (void) login:(NSString *)email password:(NSString *)password result:(void (^) (bool success))result;
+- (void) login:(NSString *)serverDomain email:(NSString *)email password:(NSString *)password result:(void (^) (bool success))result;
+- (void) loginWithAPI:(void (^) (bool success))result;
 - (void) logout;
 
 - (BOOL) loggedIn;
-- (NSString *)domain;
 
 - (UIColor *)streamColor:(NSString *)name withDefault:(UIColor *)defaultColor;
 
@@ -74,6 +74,7 @@ typedef void(^MessagesDelivered)(NSArray *messages, BOOL isFinished);
 @property(assign) BOOL backgrounded;
 @property(assign) long maxServerMessageId;
 @property(nonatomic, retain) NSString *email;
+@property(nonatomic, retain) NSString * domain;
 @property(nonatomic, retain) NSString *fullName;
 @property(nonatomic, readonly, retain) NSString *realm;
 @property(nonatomic, retain) StreamViewController *homeViewController;

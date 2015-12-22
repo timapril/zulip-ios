@@ -20,6 +20,8 @@
 // HockeySDK
 #import <HockeySDK/HockeySDK.h>
 
+#import <SafariServices/SafariServices.h>
+
 @interface ZulipAppDelegate ()
 
 @property (nonatomic, retain) NSMutableDictionary *narrows;
@@ -32,6 +34,8 @@
 @synthesize managedObjectContext = __managedObjectContext;
 @synthesize managedObjectModel = __managedObjectModel;
 @synthesize persistentStoreCoordinator = __persistentStoreCoordinator;
+
+NSString * const kSchemaLoginNotification = @"SchemaLoginNotification";
 
 -(id) init
 {
@@ -400,7 +404,7 @@
 
     __persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
 
-    NSString *sqliteDb = [NSString stringWithFormat:@"Zulip-%@.sqlite", [[ZulipAPIController sharedInstance] domain]];
+    NSString *sqliteDb = [NSString stringWithFormat:@"Zulip-%@.sqlite", [ZulipAPIController sharedInstance].email];
     NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:sqliteDb];
 
     NSDictionary *options = @{
@@ -442,6 +446,38 @@
 // Returns the URL to the application's Documents directory.
 - (NSURL *)applicationDocumentsDirectory {
     return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+    NSDictionary *dict = [self parseQueryString:[url query]];
+
+    KeychainItemWrapper *keychainItem = [[KeychainItemWrapper alloc] initWithIdentifier:@"ZulipLogin" accessGroup:nil];
+    [keychainItem setObject:dict[@"api_key"] forKey:(__bridge id)kSecValueData];
+    [keychainItem setObject:dict[@"email"] forKey:(__bridge id)kSecAttrAccount];
+    [keychainItem setObject:dict[@"domain"] forKey:(__bridge id)kSecAttrLabel];
+
+    [ZulipAPIClient updateURL:dict[@"domain"]];
+
+    NSNotification *schemaLoginNotification = [NSNotification notificationWithName:kSchemaLoginNotification
+                                                                            object:self
+                                                                          userInfo:nil];
+    [[NSNotificationCenter defaultCenter] postNotification:schemaLoginNotification];
+
+    return YES;
+}
+
+- (NSDictionary *)parseQueryString:(NSString *)query {
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] initWithCapacity:6];
+    NSArray *pairs = [query componentsSeparatedByString:@"&"];
+
+    for (NSString *pair in pairs) {
+        NSArray *elements = [pair componentsSeparatedByString:@"="];
+        NSString *key = [[elements objectAtIndex:0] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        NSString *val = [[elements objectAtIndex:1] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+
+        [dict setObject:val forKey:key];
+    }
+    return dict;
 }
 
 @end

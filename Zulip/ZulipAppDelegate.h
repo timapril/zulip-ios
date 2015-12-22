@@ -26,6 +26,9 @@
 @property (readonly, strong, nonatomic) NSManagedObjectModel *managedObjectModel;
 @property (readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
+// Schema based Login notifications
+extern NSString * const kSchemaLoginNotification;
+
 - (void) showErrorScreen:(NSString *)errorMessage;
 - (void) dismissErrorScreen;
 - (void) dismissLoginScreen;
